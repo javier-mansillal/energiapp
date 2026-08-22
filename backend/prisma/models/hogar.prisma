@@ -1,0 +1,20 @@
+model Hogar {
+    id               String   @id @default(uuid())
+    usuarioId        String
+    nombre           String
+    region           String
+    comuna           String
+    direccion        String
+    cantidadPersonas Int      @default(1)
+    createdAt        DateTime @default(now())
+    updatedAt        DateTime @updatedAt
+
+    // Relaciones de hogar con otros modelos.
+    usuario                Usuario                 @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+    boletas                Boleta[]
+    electrodomesticosHogar ElectrodomesticoHogar[]
+    predicciones           Prediccion[]
+    recomendacionesHogar   RecomendacionHogar[]
+
+    @@map("hogares")
+}

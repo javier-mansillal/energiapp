@@ -1,0 +1,47 @@
+enum EstadoRecomendacion {
+    PENDIENTE
+    APLICADA
+    IGNORADA
+}
+
+enum CategoriaRecomendacion {
+    VAMPIRO
+    COMPARATIVA
+    USO_EFICIENTE
+}
+
+enum ImpactoRecomendacion {
+    ALTO
+    MEDIO
+    BAJO
+}
+
+model CatalogoRecomendacion {
+    id                   String                 @id @default(uuid())
+    codigoRegla          String                 @unique
+    titulo               String
+    descripcionPlantilla String
+    categoria            CategoriaRecomendacion
+    impactoEstimado      ImpactoRecomendacion
+    // Relación de catálogo de recomendaciones con los hogares que han recibido la recomendación.
+    recomendaciones      RecomendacionHogar[]
+
+    @@map("catalogo_recomendaciones")
+}
+
+model RecomendacionHogar {
+    id                String                 @id @default(uuid())
+    hogarId           String
+    catalogoId        String?
+    titulo            String
+    descripcion       String
+    ahorroEstimadoKwh Decimal                @db.Decimal(10, 2)
+    estado            EstadoRecomendacion    @default(PENDIENTE)
+    fechaGeneracion   DateTime               @default(now())
+    fechaRespuesta    DateTime?
+    // Relación de recomendación con el hogar al que pertenece y con el catálogo de recomendaciones.
+    hogar             Hogar                  @relation(fields: [hogarId], references: [id], onDelete: Cascade)
+    catalogo          CatalogoRecomendacion? @relation(fields: [catalogoId], references: [id], onDelete: SetNull)
+
+    @@map("recomendaciones_hogar")
+}

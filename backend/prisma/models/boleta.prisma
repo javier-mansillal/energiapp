@@ -1,0 +1,28 @@
+/// En caso de que el usuario suba sus boletas de manera manual o automática (PDF).
+enum TipoOrigenBoleta {
+    MANUAL
+    PDF_AUTOMATICO
+}
+
+model Boleta {
+    id                   String           @id @default(uuid())
+    hogarId              String
+    // Datos técnicos y financieros de la boleta del hogar.
+    consumoKwh           Decimal          @db.Decimal(10, 2)
+    montoTotal           Decimal          @db.Decimal(10, 2)
+    fechaInicioLectura   DateTime
+    fechaFinLectura      DateTime
+    // Datos de la boleta que pueden ser opcionales.
+    empresaDistribuidora String?
+    numeroCliente        String?
+    fechaEmision         DateTime?
+    // Origen de la boleta, si fue subida manualmente o automáticamente.
+    tipoOrigen           TipoOrigenBoleta @default(MANUAL)
+    pdfUrl               String?
+    createdAt            DateTime         @default(now())
+    updatedAt            DateTime         @updatedAt
+    // Relación de boleta con el hogar al que pertenece.
+    hogar                Hogar            @relation(fields: [hogarId], references: [id], onDelete: Cascade)
+
+    @@map("boletas")
+}

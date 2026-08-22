@@ -1,0 +1,13 @@
+// Parámetros de conexión a la base de datos, generación de clientes y documentación.
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator dbml {
+  provider = "prisma-dbml-generator"
+  output   = "../docs"
+}

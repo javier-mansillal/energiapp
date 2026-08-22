@@ -1,0 +1,26 @@
+model Prediccion {
+    id      String @id @default(uuid())
+    hogarId String
+
+    // Estimación Puntual
+    consumoEstimadoKwh Decimal @db.Decimal(10, 2)
+    montoEstimado      Decimal @db.Decimal(10, 2)
+
+    // Intervalos de confianza
+    consumoEstimadoKwhInferior Decimal @db.Decimal(10, 2)
+    consumoEstimadoKwhSuperior Decimal @db.Decimal(10, 2)
+    montoEstimadoInferior      Decimal @db.Decimal(10, 2)
+    montoEstimadoSuperior      Decimal @db.Decimal(10, 2)
+
+    // Fecha de la predicción y fecha de creación del registro.
+    periodoProyectadoInicio DateTime
+    periodoProyectadoFin    DateTime
+
+    algoritmoUsado String
+    fechaCalculo   DateTime @default(now())
+
+    // Relación de predicción con el hogar al que pertenece.
+    hogar Hogar @relation(fields: [hogarId], references: [id], onDelete: Cascade)
+
+    @@map("predicciones")
+}

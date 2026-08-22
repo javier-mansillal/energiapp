@@ -1,0 +1,35 @@
+model CatalogoElectrodomestico {
+    id                     String                  @id @default(uuid())
+    nombre                 String
+    categoria              String
+    potenciaPromedioWatts  Decimal                 @db.Decimal(10, 2)
+    consumoVampiroW        Decimal                 @db.Decimal(10, 2)
+    // Relación de catálogo de electrodomésticos con los hogares que los tienen.
+    electrodomesticosHogar ElectrodomesticoHogar[]
+
+    @@map("catalogo_electrodomesticos")
+}
+
+model ElectrodomesticoHogar {
+    id                  String  @id @default(uuid())
+    hogarId             String
+    catalogoId          String?
+    nombrePersonalizado String?
+    potenciaW           Decimal @db.Decimal(10, 2)
+    consumoVampiroW     Decimal @db.Decimal(10, 2)
+    horasUsoDiario      Decimal @db.Decimal(10, 2)
+    cantidad            Int     @default(1)
+
+    // Ciclo de vida del electrodoméstico en el hogar.
+    fechaAlta DateTime  @default(now())
+    fechaBaja DateTime?
+    esActivo  Boolean   @default(true)
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+
+    // Relación de electrodoméstico con el hogar al que pertenece y con el catálogo de electrodomésticos.
+    hogar    Hogar                     @relation(fields: [hogarId], references: [id], onDelete: Cascade)
+    catalogo CatalogoElectrodomestico? @relation(fields: [catalogoId], references: [id], onDelete: SetNull)
+
+    @@map("electrodomesticos_hogar")
+}
