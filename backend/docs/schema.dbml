@@ -1,0 +1,159 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table boletas {
+  id String [pk]
+  hogarId String [not null]
+  consumoKwh Decimal [not null]
+  montoTotal Decimal [not null]
+  fechaInicioLectura DateTime [not null]
+  fechaFinLectura DateTime [not null]
+  empresaDistribuidora String
+  numeroCliente String
+  fechaEmision DateTime
+  tipoOrigen TipoOrigenBoleta [not null, default: 'MANUAL']
+  pdfUrl String
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  hogar hogares [not null]
+}
+
+Table catalogo_electrodomesticos {
+  id String [pk]
+  nombre String [not null]
+  categoria String [not null]
+  potenciaPromedioWatts Decimal [not null]
+  consumoVampiroW Decimal [not null]
+  electrodomesticosHogar electrodomesticos_hogar [not null]
+}
+
+Table electrodomesticos_hogar {
+  id String [pk]
+  hogarId String [not null]
+  catalogoId String
+  nombrePersonalizado String
+  potenciaW Decimal [not null]
+  consumoVampiroW Decimal [not null]
+  horasUsoDiario Decimal [not null]
+  cantidad Int [not null, default: 1]
+  fechaAlta DateTime [default: `now()`, not null]
+  fechaBaja DateTime
+  esActivo Boolean [not null, default: true]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  hogar hogares [not null]
+  catalogo catalogo_electrodomesticos
+}
+
+Table hogares {
+  id String [pk]
+  usuarioId String [not null]
+  nombre String [not null]
+  region String [not null]
+  comuna String [not null]
+  direccion String [not null]
+  cantidadPersonas Int [not null, default: 1]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  usuario usuarios [not null]
+  boletas boletas [not null]
+  electrodomesticosHogar electrodomesticos_hogar [not null]
+  predicciones predicciones [not null]
+  recomendacionesHogar recomendaciones_hogar [not null]
+}
+
+Table predicciones {
+  id String [pk]
+  hogarId String [not null]
+  consumoEstimadoKwh Decimal [not null]
+  montoEstimado Decimal [not null]
+  consumoEstimadoKwhInferior Decimal [not null]
+  consumoEstimadoKwhSuperior Decimal [not null]
+  montoEstimadoInferior Decimal [not null]
+  montoEstimadoSuperior Decimal [not null]
+  periodoProyectadoInicio DateTime [not null]
+  periodoProyectadoFin DateTime [not null]
+  algoritmoUsado String [not null]
+  fechaCalculo DateTime [default: `now()`, not null]
+  hogar hogares [not null]
+}
+
+Table catalogo_recomendaciones {
+  id String [pk]
+  codigoRegla String [unique, not null]
+  titulo String [not null]
+  descripcionPlantilla String [not null]
+  categoria CategoriaRecomendacion [not null]
+  impactoEstimado ImpactoRecomendacion [not null]
+  recomendaciones recomendaciones_hogar [not null]
+}
+
+Table recomendaciones_hogar {
+  id String [pk]
+  hogarId String [not null]
+  catalogoId String
+  titulo String [not null]
+  descripcion String [not null]
+  ahorroEstimadoKwh Decimal [not null]
+  estado EstadoRecomendacion [not null, default: 'PENDIENTE']
+  fechaGeneracion DateTime [default: `now()`, not null]
+  fechaRespuesta DateTime
+  hogar hogares [not null]
+  catalogo catalogo_recomendaciones
+}
+
+Table usuarios {
+  id String [pk]
+  email String [unique, not null]
+  nombre String
+  oauth_provider OauthProvider [not null]
+  oauth_id String [unique, not null]
+  created_at DateTime [default: `now()`, not null]
+  updated_at DateTime [not null]
+  hogares hogares [not null]
+
+  Note: 'Modelo de usuario con información de autenticación y relación con hogares.'
+}
+
+Enum TipoOrigenBoleta {
+  MANUAL
+  PDF_AUTOMATICO
+}
+
+Enum EstadoRecomendacion {
+  PENDIENTE
+  APLICADA
+  IGNORADA
+}
+
+Enum CategoriaRecomendacion {
+  VAMPIRO
+  COMPARATIVA
+  USO_EFICIENTE
+}
+
+Enum ImpactoRecomendacion {
+  ALTO
+  MEDIO
+  BAJO
+}
+
+Enum OauthProvider {
+  GOOGLE
+  MICROSOFT
+}
+
+Ref: boletas.hogarId > hogares.id [delete: Cascade]
+
+Ref: electrodomesticos_hogar.hogarId > hogares.id [delete: Cascade]
+
+Ref: electrodomesticos_hogar.catalogoId > catalogo_electrodomesticos.id [delete: Set Null]
+
+Ref: hogares.usuarioId > usuarios.id [delete: Cascade]
+
+Ref: predicciones.hogarId > hogares.id [delete: Cascade]
+
+Ref: recomendaciones_hogar.hogarId > hogares.id [delete: Cascade]
+
+Ref: recomendaciones_hogar.catalogoId > catalogo_recomendaciones.id [delete: Set Null]
