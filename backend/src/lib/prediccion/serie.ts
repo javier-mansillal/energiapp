@@ -40,10 +40,14 @@ export function prepararSerie(boletas: BoletaParaPrediccion[]): SeriePreparada {
         (b.fechaFinLectura.getTime() - b.fechaInicioLectura.getTime()) / MS_DIA
       )
     );
+    // El consumo es un promedio del período, así que su punto representativo en
+    // el tiempo es el centro del período, no el inicio. Usar el centro evita
+    // inflar la extrapolación al predecir el período siguiente.
+    const centroLectura =
+      (b.fechaInicioLectura.getTime() + b.fechaFinLectura.getTime()) / 2;
     return {
       kwhNormalizado: (b.consumoKwh * DIAS_MES) / duracionDias,
-      diasDesdeInicio:
-        (b.fechaInicioLectura.getTime() - inicioSerie.getTime()) / MS_DIA,
+      diasDesdeInicio: (centroLectura - inicioSerie.getTime()) / MS_DIA,
       duracionDias,
       fechaInicioLectura: b.fechaInicioLectura,
       fechaFinLectura: b.fechaFinLectura,

@@ -1,10 +1,12 @@
 // Tipos del módulo de predicción de consumo.
 // El módulo es puro: recibe boletas y devuelve una predicción. No conoce Prisma.
 
-// Modelo estadístico usado. Hoy solo hay regresión lineal; el campo se guarda
-// en la tabla `predicciones` por si se agregan modelos a futuro.
-export const ALGORITMO_REGRESION = "REGRESION";
-export type AlgoritmoPrediccion = typeof ALGORITMO_REGRESION;
+// Identificador del modelo de predicción. Se guarda en la columna
+// `algoritmoUsado` y sirve además para invalidar la caché: al subir la versión,
+// las predicciones guardadas con la versión anterior se recalculan solas.
+// V2: intervalo con cuantil normal al 95% y ajuste por centro de período.
+export const MODELO_PREDICCION = "REGRESION_95N_V2";
+export type AlgoritmoPrediccion = typeof MODELO_PREDICCION;
 
 // Entrada mínima por cada boleta histórica. Los Decimal de Prisma se
 // normalizan a number antes de entrar acá.

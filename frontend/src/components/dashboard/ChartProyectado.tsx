@@ -12,6 +12,9 @@ type ClaveHistorica = 'consumoHistorico' | 'montoHistorico'
 type ClaveProyectada = 'consumoProyectado' | 'montoProyectado'
 type ClaveIntervalo = 'consumoIntervalo' | 'montoIntervalo'
 
+// Clave interna donde se dejan los offsets que espera el ErrorBar.
+const RANGO_KEY = '__rango'
+
 // Gráfico de barras mensual que suma la predicción del próximo período: una
 // barra punteada y sin relleno, con su intervalo de confianza dibujado como
 // bigotes. Comparte stackId con las barras históricas para quedar alineada en
@@ -75,9 +78,29 @@ export default function ChartProyectado({
     )
   }
 
+  // recharts interpreta el array del ErrorBar como offsets RELATIVOS al valor
+  // de la barra ([valor - offsetBajo, valor + offsetAlto]), no como límites
+  // absolutos. Por eso acá se convierte el intervalo [inferior, superior] a
+  // offsets; si se pasaran los límites tal cual, los bigotes quedarían
+  // desplazados hacia abajo.
+  const dataConRango = data.map((p) => {
+    const valor = p[dataKeyProyectado]
+    const intervalo = p[dataKeyIntervalo]
+    return {
+      ...p,
+      [RANGO_KEY]:
+        valor != null && intervalo != null
+          ? [valor - intervalo[0], intervalo[1] - valor]
+          : null,
+    }
+  })
+
   return (
     <ChartContainer config={config} className="h-64">
-      <BarChart data={data} margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+      <BarChart
+        data={dataConRango}
+        margin={{ top: 8, right: 8, bottom: 8, left: 8 }}
+      >
         <CartesianGrid vertical={false} />
         <XAxis dataKey="mes" />
         <YAxis width={40} />
@@ -99,7 +122,7 @@ export default function ChartProyectado({
           radius={[4, 4, 0, 0]}
         >
           <ErrorBar
-            dataKey={dataKeyIntervalo}
+            dataKey={RANGO_KEY}
             stroke={colorVar}
             strokeWidth={1.5}
             width={6}

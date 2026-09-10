@@ -1,7 +1,7 @@
 import { DIAS_MES, prepararSerie } from "./serie";
 import { predecirRegresion } from "./regresion";
 import {
-  ALGORITMO_REGRESION,
+  MODELO_PREDICCION,
   type BoletaParaPrediccion,
   type Prediccion,
   type ResultadoPrediccion,
@@ -88,7 +88,7 @@ export function predecir(boletas: BoletaParaPrediccion[]): ResultadoPrediccion {
   const tarifa = tarifaProyectada(validas);
 
   const prediccion: Prediccion = {
-    algoritmo: ALGORITMO_REGRESION,
+    algoritmo: MODELO_PREDICCION,
     consumoEstimadoKwh: redondear(consumo),
     consumoEstimadoKwhInferior: redondear(consumoInferior),
     consumoEstimadoKwhSuperior: redondear(consumoSuperior),

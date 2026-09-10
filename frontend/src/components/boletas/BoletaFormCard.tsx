@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import DatePicker from '../DatePicker'
+import MonthPicker from '../MonthPicker'
 import { cn } from '@/lib/utils'
 import {
   emptyForm,
@@ -54,8 +55,8 @@ export default function BoletaFormCard({
       setForm({
         consumoKwh: d.consumoKwh !== undefined ? String(d.consumoKwh) : '',
         montoTotal: d.montoTotal !== undefined ? String(d.montoTotal) : '',
-        fechaInicioLectura: d.fechaInicioLectura ?? '',
-        fechaFinLectura: d.fechaFinLectura ?? '',
+        // El período se reduce a su mes; el backend arma el rango de días.
+        mes: (d.fechaFinLectura ?? d.fechaInicioLectura ?? '').slice(0, 7),
         empresaDistribuidora: d.empresaDistribuidora ?? '',
         numeroCliente: d.numeroCliente ?? '',
         fechaEmision: d.fechaEmision ?? '',
@@ -199,39 +200,34 @@ export default function BoletaFormCard({
             placeholder="Monto total (CLP)"
             className={inputCls}
           />
-          <DatePicker
-            value={form.fechaInicioLectura}
-            onChange={(iso) => setForm({ ...form, fechaInicioLectura: iso })}
-            placeholder="Inicio de lectura"
+          <MonthPicker
+            value={form.mes}
+            onChange={(mes) => setForm({ ...form, mes })}
+            placeholder="Mes de la boleta"
           />
           <DatePicker
-            value={form.fechaFinLectura}
-            onChange={(iso) => setForm({ ...form, fechaFinLectura: iso })}
-            placeholder="Fin de lectura"
+            value={form.fechaEmision}
+            onChange={(iso) => setForm({ ...form, fechaEmision: iso })}
+            placeholder="Fecha de emisión (opcional)"
           />
           <input
             value={form.empresaDistribuidora}
             onChange={(e) => setForm({ ...form, empresaDistribuidora: e.target.value })}
-            placeholder="Empresa distribuidora"
+            placeholder="Empresa distribuidora (opcional)"
             className={inputCls}
           />
           <input
             value={form.numeroCliente}
             onChange={(e) => setForm({ ...form, numeroCliente: e.target.value })}
-            placeholder="Número de cliente"
+            placeholder="Número de cliente (opcional)"
             className={inputCls}
-          />
-          <DatePicker
-            value={form.fechaEmision}
-            onChange={(iso) => setForm({ ...form, fechaEmision: iso })}
-            placeholder="Fecha de emisión"
           />
         </div>
 
         <div className="mt-4 flex justify-end">
           <Button
             onClick={guardar}
-            disabled={guardando || !form.consumoKwh || !form.montoTotal || !form.fechaInicioLectura || !form.fechaFinLectura}
+            disabled={guardando || !form.consumoKwh || !form.montoTotal || !form.mes}
             className="cursor-pointer gap-1.5 bg-amber-500 hover:bg-amber-400 text-amber-950 font-semibold"
           >
             {guardando ? (

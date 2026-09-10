@@ -19,6 +19,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import DatePicker from '../DatePicker'
+import MonthPicker from '../MonthPicker'
 import { cn } from '@/lib/utils'
 import {
   emptyForm,
@@ -163,32 +164,27 @@ export default function BoletaCard({
                   placeholder="Monto total (CLP)"
                   className={inputCls}
                 />
-                <DatePicker
-                  value={editForm.fechaInicioLectura}
-                  onChange={(iso) => setEditForm({ ...editForm, fechaInicioLectura: iso })}
-                  placeholder="Inicio de lectura"
-                />
-                <DatePicker
-                  value={editForm.fechaFinLectura}
-                  onChange={(iso) => setEditForm({ ...editForm, fechaFinLectura: iso })}
-                  placeholder="Fin de lectura"
+                <MonthPicker
+                  value={editForm.mes}
+                  onChange={(mes) => setEditForm({ ...editForm, mes })}
+                  placeholder="Mes de la boleta"
                 />
                 <input
                   value={editForm.empresaDistribuidora}
                   onChange={(e) => setEditForm({ ...editForm, empresaDistribuidora: e.target.value })}
-                  placeholder="Empresa distribuidora"
+                  placeholder="Empresa distribuidora (opcional)"
                   className={inputCls}
                 />
                 <input
                   value={editForm.numeroCliente}
                   onChange={(e) => setEditForm({ ...editForm, numeroCliente: e.target.value })}
-                  placeholder="Número de cliente"
+                  placeholder="Número de cliente (opcional)"
                   className={inputCls}
                 />
                 <DatePicker
                   value={editForm.fechaEmision}
                   onChange={(iso) => setEditForm({ ...editForm, fechaEmision: iso })}
-                  placeholder="Fecha de emisión"
+                  placeholder="Fecha de emisión (opcional)"
                 />
               </div>
               <div className="mt-3 flex justify-end gap-2">

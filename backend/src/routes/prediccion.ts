@@ -98,7 +98,9 @@ router.get("/", async (req: AuthedRequest, res) => {
     const { prediccion, nBoletas } = resultado;
 
     // Frescura: sirve la predicción guardada solo si apunta al mismo período
-    // proyectado y se calculó después de la última modificación de las boletas.
+    // proyectado, la calculó el mismo modelo y se calculó después de la última
+    // modificación de las boletas. Al cambiar la versión del modelo, las filas
+    // viejas dejan de calzar y se recalculan solas.
     const ultimaActualizacion = boletas.reduce(
       (max, b) => (b.updatedAt > max ? b.updatedAt : max),
       new Date(0)
@@ -106,6 +108,7 @@ router.get("/", async (req: AuthedRequest, res) => {
     const guardada = await prisma.prediccion.findFirst({
       where: {
         hogarId,
+        algoritmoUsado: prediccion.algoritmo,
         periodoProyectadoInicio: prediccion.periodoProyectadoInicio,
         fechaCalculo: { gte: ultimaActualizacion },
       },

@@ -36,8 +36,9 @@ export type ResultadoAnalisis = {
 export type BoletaForm = {
   consumoKwh: string
   montoTotal: string
-  fechaInicioLectura: string
-  fechaFinLectura: string
+  // Mes de la boleta en formato 'YYYY-MM'. El backend lo expande al primer y
+  // último día del mes.
+  mes: string
   empresaDistribuidora: string
   numeroCliente: string
   fechaEmision: string
@@ -46,8 +47,7 @@ export type BoletaForm = {
 export const emptyForm: BoletaForm = {
   consumoKwh: '',
   montoTotal: '',
-  fechaInicioLectura: '',
-  fechaFinLectura: '',
+  mes: '',
   empresaDistribuidora: '',
   numeroCliente: '',
   fechaEmision: '',
@@ -57,8 +57,7 @@ export function toForm(b: Boleta): BoletaForm {
   return {
     consumoKwh: String(b.consumoKwh),
     montoTotal: String(b.montoTotal),
-    fechaInicioLectura: b.fechaInicioLectura.slice(0, 10),
-    fechaFinLectura: b.fechaFinLectura.slice(0, 10),
+    mes: b.fechaFinLectura.slice(0, 7),
     empresaDistribuidora: b.empresaDistribuidora ?? '',
     numeroCliente: b.numeroCliente ?? '',
     fechaEmision: b.fechaEmision ? b.fechaEmision.slice(0, 10) : '',
@@ -140,8 +139,7 @@ export async function crearBoleta(
   fd.append('hogarId', hogarId)
   fd.append('consumoKwh', form.consumoKwh)
   fd.append('montoTotal', form.montoTotal)
-  fd.append('fechaInicioLectura', form.fechaInicioLectura)
-  fd.append('fechaFinLectura', form.fechaFinLectura)
+  fd.append('mes', form.mes)
   fd.append('empresaDistribuidora', form.empresaDistribuidora)
   fd.append('numeroCliente', form.numeroCliente)
   if (form.fechaEmision) fd.append('fechaEmision', form.fechaEmision)
@@ -153,8 +151,7 @@ export async function editarBoleta(id: string, form: BoletaForm): Promise<void> 
   await api.patch(`/boletas/${id}`, {
     consumoKwh: form.consumoKwh,
     montoTotal: form.montoTotal,
-    fechaInicioLectura: form.fechaInicioLectura,
-    fechaFinLectura: form.fechaFinLectura,
+    mes: form.mes,
     empresaDistribuidora: form.empresaDistribuidora,
     numeroCliente: form.numeroCliente,
     fechaEmision: form.fechaEmision || null,

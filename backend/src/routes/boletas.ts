@@ -24,10 +24,45 @@ function isPdf(buffer: Buffer): boolean {
   return buffer.length >= 5 && buffer.subarray(0, 5).toString() === "%PDF-";
 }
 
+// Convierte un mes "YYYY-MM" en el período completo: primer y último día.
+// Se usa mediodía UTC para que la fecha no se corra de mes en zonas horarias
+// como la de Chile (UTC-4).
+function periodoDesdeMes(mes: string): { inicio: Date; fin: Date } | null {
+  const m = /^(\d{4})-(\d{2})$/.exec(mes);
+  if (!m) return null;
+  const anio = Number(m[1]);
+  const mesNum = Number(m[2]);
+  if (mesNum < 1 || mesNum > 12) return null;
+  return {
+    inicio: new Date(Date.UTC(anio, mesNum - 1, 1, 12, 0, 0)),
+    fin: new Date(Date.UTC(anio, mesNum, 0, 12, 0, 0)),
+  };
+}
+
+// Resuelve el período de la boleta. Prioriza el mes; si no viene, acepta fechas
+// explícitas (períodos que no calzan con un mes calendario, p. ej. de un PDF).
+function resolverPeriodo(input: {
+  mes?: unknown;
+  fechaInicioLectura?: unknown;
+  fechaFinLectura?: unknown;
+}): { inicio: Date; fin: Date } | null {
+  if (typeof input.mes === "string" && input.mes) {
+    return periodoDesdeMes(input.mes);
+  }
+  if (input.fechaInicioLectura && input.fechaFinLectura) {
+    const inicio = new Date(input.fechaInicioLectura as string);
+    const fin = new Date(input.fechaFinLectura as string);
+    if (!Number.isNaN(inicio.getTime()) && !Number.isNaN(fin.getTime())) {
+      return { inicio, fin };
+    }
+  }
+  return null;
+}
+
 // POST /api/boletas → crea una boleta (manual o con PDF adjunto).
-// multipart/form-data: hogarId, consumoKwh, montoTotal, fechaInicioLectura,
-// fechaFinLectura (obligatorios) + empresaDistribuidora, numeroCliente,
-// fechaEmision, pdf (opcionales).
+// multipart/form-data: hogarId, consumoKwh, montoTotal y mes (obligatorios) +
+// empresaDistribuidora, numeroCliente, fechaEmision, pdf (opcionales).
+// El mes ("YYYY-MM") se expande al primer y último día del mes.
 router.post(
   "/",
   (req, res, next) => {
@@ -48,6 +83,7 @@ router.post(
       hogarId,
       consumoKwh,
       montoTotal,
+      mes,
       fechaInicioLectura,
       fechaFinLectura,
       empresaDistribuidora,
@@ -55,16 +91,16 @@ router.post(
       fechaEmision,
     } = body;
 
-    if (
-      !hogarId ||
-      !consumoKwh ||
-      !montoTotal ||
-      !fechaInicioLectura ||
-      !fechaFinLectura
-    ) {
+    if (!hogarId || !consumoKwh || !montoTotal) {
       return res.status(400).json({
-        error:
-          "Faltan datos: hogarId, consumoKwh, montoTotal, fechaInicioLectura y fechaFinLectura son obligatorios",
+        error: "Faltan datos: hogarId, consumoKwh y montoTotal son obligatorios",
+      });
+    }
+
+    const periodo = resolverPeriodo({ mes, fechaInicioLectura, fechaFinLectura });
+    if (!periodo) {
+      return res.status(400).json({
+        error: "Falta el mes de la boleta (formato YYYY-MM)",
       });
     }
 
@@ -92,8 +128,8 @@ router.post(
           hogarId,
           consumoKwh: String(consumoKwh),
           montoTotal: String(montoTotal),
-          fechaInicioLectura: new Date(fechaInicioLectura),
-          fechaFinLectura: new Date(fechaFinLectura),
+          fechaInicioLectura: periodo.inicio,
+          fechaFinLectura: periodo.fin,
           empresaDistribuidora: empresaDistribuidora || null,
           numeroCliente: numeroCliente || null,
           fechaEmision: fechaEmision ? new Date(fechaEmision) : null,
@@ -240,10 +276,21 @@ router.patch("/:id", async (req: AuthedRequest, res) => {
 
     if (body.consumoKwh !== undefined) data.consumoKwh = String(body.consumoKwh);
     if (body.montoTotal !== undefined) data.montoTotal = String(body.montoTotal);
-    if (body.fechaInicioLectura !== undefined)
-      data.fechaInicioLectura = new Date(body.fechaInicioLectura);
-    if (body.fechaFinLectura !== undefined)
-      data.fechaFinLectura = new Date(body.fechaFinLectura);
+    // El mes se expande al período completo; si no viene, se aceptan fechas
+    // explícitas (períodos que no calzan con un mes calendario).
+    if (body.mes !== undefined) {
+      const periodo = resolverPeriodo({ mes: body.mes });
+      if (!periodo) {
+        return res.status(400).json({ error: "El mes debe tener formato YYYY-MM" });
+      }
+      data.fechaInicioLectura = periodo.inicio;
+      data.fechaFinLectura = periodo.fin;
+    } else {
+      if (body.fechaInicioLectura !== undefined)
+        data.fechaInicioLectura = new Date(body.fechaInicioLectura);
+      if (body.fechaFinLectura !== undefined)
+        data.fechaFinLectura = new Date(body.fechaFinLectura);
+    }
     if (body.empresaDistribuidora !== undefined)
       data.empresaDistribuidora = body.empresaDistribuidora || null;
     if (body.numeroCliente !== undefined)

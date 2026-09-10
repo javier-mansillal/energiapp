@@ -1,6 +1,14 @@
 import type { PuntoSerie } from "./serie";
 import type { Pronostico } from "./types";
-import { media, t95, varianzaResidual } from "./estadistica";
+import { media, varianzaResidual } from "./estadistica";
+
+// Cuantil normal para un intervalo del 95% (dos colas).
+//
+// Se usa la normal en vez de la t de Student a propósito: con pocas boletas la
+// t castiga muchísimo el margen (con 3 boletas quedan 1 grado de libertad y
+// t = 12.7), lo que produce rangos inutilizables. El costo es que no se corrige
+// por estimar sigma con pocos datos, así que el rango es algo optimista.
+const Z_95 = 1.959964;
 
 // Coeficiente de determinación (bondad de ajuste de la recta), solo informativo.
 function coeficienteR2(
@@ -56,9 +64,7 @@ export function predecirRegresion(
   const terminoExtrapolacion =
     sxx === 0 ? 0 : (xObjetivo - mediaX) ** 2 / sxx;
   const margen =
-    t95(gradosLibertad) *
-    sigma *
-    Math.sqrt(1 + 1 / n + terminoExtrapolacion);
+    Z_95 * sigma * Math.sqrt(1 + 1 / n + terminoExtrapolacion);
 
   return {
     valor,
