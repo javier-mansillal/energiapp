@@ -7,6 +7,8 @@ export default defineConfig({
   schema: "prisma/",
   migrations: {
     path: "prisma/migrations",
+    // Permite `npx prisma db seed` (catálogo de electrodomésticos).
+    seed: "tsx prisma/seed.ts",
   },
   datasource: {
     url: process.env["DATABASE_URL"],
