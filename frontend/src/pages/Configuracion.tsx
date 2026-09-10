@@ -272,7 +272,7 @@ export default function Configuracion() {
             Preferencias
           </CardTitle>
           <CardDescription>
-            Personaliza cómo Energiapp usa tus datos. Más opciones próximamente.
+            Personaliza cómo Energiapp usa tus datos.
           </CardDescription>
         </CardHeader>
         <CardContent>
