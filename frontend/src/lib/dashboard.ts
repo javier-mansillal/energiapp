@@ -1,5 +1,6 @@
 import type { Boleta } from './boletas'
 import { MESES } from './boletas'
+import type { Prediccion } from './prediccion'
 
 // ── Tipos ──
 // Un punto mensual agrega todas las boletas cuyo período de lectura termina
@@ -71,4 +72,83 @@ export function fmtKwh(n: number | string): string {
 
 export function fmtTarifa(n: number | string): string {
   return `$ ${Number(n).toLocaleString('es-CL', { maximumFractionDigits: 1 })}/kWh`
+}
+
+// 'Junio 2026' a partir de una fecha ISO.
+export function mesDe(iso: string): string {
+  const d = new Date(iso)
+  return `${MESES[d.getMonth()]} ${d.getFullYear()}`
+}
+
+// '171–280 kWh' para mostrar un intervalo de consumo compacto.
+export function fmtRangoKwh(inf: number, sup: number): string {
+  return `${Number(inf).toLocaleString('es-CL')}–${Number(sup).toLocaleString('es-CL')} kWh`
+}
+
+// ── Datos de gráfico con proyección ──
+// Series separadas para histórico y predicción: así Recharts dibuja la barra
+// punteada solo en el período proyectado y no se mezcla con las barras llenas.
+// Los valores nulos se omiten al dibujar.
+export type PuntoGrafico = {
+  key: string
+  mes: string
+  mesLargo: string
+  consumoHistorico: number | null
+  montoHistorico: number | null
+  consumoProyectado: number | null
+  consumoIntervalo: [number, number] | null
+  montoProyectado: number | null
+  montoIntervalo: [number, number] | null
+  proyectado: boolean
+}
+
+// Convierte los puntos mensuales históricos en puntos de gráfico y agrega, si
+// hay predicción, un punto proyectado con su intervalo de confianza.
+export function conProyeccion(
+  puntos: PuntoMensual[],
+  prediccion: Prediccion | null
+): PuntoGrafico[] {
+  const historicos: PuntoGrafico[] = puntos.map((p) => ({
+    key: p.key,
+    mes: p.mes,
+    mesLargo: p.mesLargo,
+    consumoHistorico: p.consumoKwh,
+    montoHistorico: p.montoTotal,
+    consumoProyectado: null,
+    consumoIntervalo: null,
+    montoProyectado: null,
+    montoIntervalo: null,
+    proyectado: false,
+  }))
+
+  if (!prediccion) return historicos
+
+  // Se etiqueta por el fin del período (igual que procesarBoletas agrupa las
+  // boletas por fechaFinLectura), así el punto proyectado no repite el mes del
+  // último histórico.
+  const d = new Date(prediccion.periodoProyectadoFin)
+  const mes = `${MESES[d.getMonth()].slice(0, 3)} ${String(d.getFullYear()).slice(2)}`
+  const mesLargo = `${MESES[d.getMonth()]} ${d.getFullYear()}`
+
+  return [
+    ...historicos,
+    {
+      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+      mes,
+      mesLargo,
+      consumoHistorico: null,
+      montoHistorico: null,
+      consumoProyectado: prediccion.consumoEstimadoKwh,
+      consumoIntervalo: [
+        prediccion.consumoEstimadoKwhInferior,
+        prediccion.consumoEstimadoKwhSuperior,
+      ],
+      montoProyectado: prediccion.montoEstimado,
+      montoIntervalo: [
+        prediccion.montoEstimadoInferior,
+        prediccion.montoEstimadoSuperior,
+      ],
+      proyectado: true,
+    },
+  ]
 }

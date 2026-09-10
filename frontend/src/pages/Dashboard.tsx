@@ -34,13 +34,21 @@ import { getActiveHogarId } from '@/lib/activeHogar'
 import { listarBoletas, fmtCLP } from '@/lib/boletas'
 import {
   procesarBoletas,
+  conProyeccion,
   kpis,
   fmtKwh,
   fmtTarifa,
+  fmtRangoKwh,
+  mesDe,
   type PuntoMensual,
 } from '@/lib/dashboard'
+import {
+  obtenerPrediccion,
+  type ResultadoPrediccion,
+} from '@/lib/prediccion'
 import KpiCard from '../components/dashboard/KpiCard'
 import ChartCard from '../components/dashboard/ChartCard'
+import ChartProyectado from '../components/dashboard/ChartProyectado'
 import DashboardSkeleton from '../components/dashboard/DashboardSkeleton'
 import { cn } from '@/lib/utils'
 
@@ -119,6 +127,7 @@ export default function Dashboard() {
   const [estado, setEstado] = useState<Estado>(hogarIdInicial ? 'loading' : 'ok')
   const [puntos, setPuntos] = useState<PuntoMensual[]>([])
   const [sinBoletas, setSinBoletas] = useState(!hogarIdInicial)
+  const [prediccion, setPrediccion] = useState<ResultadoPrediccion | null>(null)
   const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
@@ -129,11 +138,16 @@ export default function Dashboard() {
     }
 
     let mounted = true
-    listarBoletas(hogarId)
-      .then((data) => {
+    Promise.all([
+      listarBoletas(hogarId),
+      // La predicción es accesoria: si su cálculo falla, el dashboard igual carga.
+      obtenerPrediccion(hogarId).catch(() => null),
+    ])
+      .then(([data, pred]) => {
         if (!mounted) return
         setPuntos(procesarBoletas(data))
         setSinBoletas(data.length === 0)
+        setPrediccion(pred)
         setEstado('ok')
       })
       .catch(() => {
@@ -146,6 +160,9 @@ export default function Dashboard() {
 
   const k = kpis(puntos)
   const hayDatos = puntos.length > 0
+  const pred = prediccion?.estado === 'ok' ? prediccion.prediccion : null
+  const faltan = prediccion?.estado === 'insuficiente' ? prediccion : null
+  const datosGrafico = conProyeccion(puntos, pred)
 
   return (
     <AppLayout>
@@ -192,7 +209,12 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <KpiCard icon={Zap} title="Consumo del mes" value="0 kWh" />
             <KpiCard icon={Wallet} title="Costo del mes" value="$ 0" />
-            <KpiCard icon={TrendingUp} title="Predicción" value="0 kWh" sub="Próximamente" />
+            <KpiCard
+              icon={TrendingUp}
+              title="Predicción"
+              value="Sin datos"
+              sub="No se pudo calcular"
+            />
           </div>
 
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -261,8 +283,17 @@ export default function Dashboard() {
             <KpiCard
               icon={TrendingUp}
               title="Predicción"
-              value="0 kWh"
-              sub="Módulo de predicción próximamente"
+              value={pred ? fmtKwh(pred.consumoEstimadoKwh) : 'Sin datos'}
+              sub={
+                pred
+                  ? `${mesDe(pred.periodoProyectadoFin)} · ${fmtRangoKwh(
+                      pred.consumoEstimadoKwhInferior,
+                      pred.consumoEstimadoKwhSuperior
+                    )}`
+                  : faltan
+                    ? `Necesitas ${faltan.minimoBoletas} boletas o más (tienes ${faltan.nBoletas})`
+                    : 'No se pudo calcular la predicción'
+              }
             />
           </div>
 
@@ -270,33 +301,19 @@ export default function Dashboard() {
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <ChartCard
               title="Consumo por mes"
-              description="kWh facturados por período de lectura"
+              description="kWh por período · la barra punteada es la predicción"
             >
               {hayDatos ? (
-                <ChartContainer config={chartConfig} className="h-64">
-                  <BarChart
-                    data={puntos}
-                    margin={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                  >
-                    <CartesianGrid vertical={false} />
-                    <XAxis dataKey="mes" />
-                    <YAxis width={40} />
-                    <Bar
-                      dataKey="consumoKwh"
-                      fill="var(--color-consumo)"
-                      radius={[4, 4, 0, 0]}
-                    />
-                    <ChartTooltip
-                      cursor={{ stroke: 'var(--color-border)' }}
-                      content={
-                        <ChartTooltipContent
-                          hideLabel
-                          formatter={tooltipRow('Consumo', fmtKwh)}
-                        />
-                      }
-                    />
-                  </BarChart>
-                </ChartContainer>
+                <ChartProyectado
+                  data={datosGrafico}
+                  config={chartConfig}
+                  colorVar="var(--color-consumo)"
+                  label="Consumo"
+                  fmt={fmtKwh}
+                  dataKeyHistorico="consumoHistorico"
+                  dataKeyProyectado="consumoProyectado"
+                  dataKeyIntervalo="consumoIntervalo"
+                />
               ) : (
                 chartVacio('Sin datos para mostrar')
               )}
@@ -304,33 +321,19 @@ export default function Dashboard() {
 
             <ChartCard
               title="Costo por mes"
-              description="Monto total facturado por período"
+              description="Monto facturado · la barra punteada es la predicción"
             >
               {hayDatos ? (
-                <ChartContainer config={chartConfig} className="h-64">
-                  <BarChart
-                    data={puntos}
-                    margin={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                  >
-                    <CartesianGrid vertical={false} />
-                    <XAxis dataKey="mes" />
-                    <YAxis width={40} />
-                    <Bar
-                      dataKey="montoTotal"
-                      fill="var(--color-costo)"
-                      radius={[4, 4, 0, 0]}
-                    />
-                    <ChartTooltip
-                      cursor={{ stroke: 'var(--color-border)' }}
-                      content={
-                        <ChartTooltipContent
-                          hideLabel
-                          formatter={tooltipRow('Costo', fmtCLP)}
-                        />
-                      }
-                    />
-                  </BarChart>
-                </ChartContainer>
+                <ChartProyectado
+                  data={datosGrafico}
+                  config={chartConfig}
+                  colorVar="var(--color-costo)"
+                  label="Costo"
+                  fmt={fmtCLP}
+                  dataKeyHistorico="montoHistorico"
+                  dataKeyProyectado="montoProyectado"
+                  dataKeyIntervalo="montoIntervalo"
+                />
               ) : (
                 chartVacio('Sin datos para mostrar')
               )}
