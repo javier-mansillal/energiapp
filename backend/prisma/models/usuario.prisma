@@ -2,19 +2,19 @@
 /// Se pueden agregar más proveedores según sea necesario.
 /// Actualmente se soportan Google y Microsoft, pero se pueden agregar otros proveedores en el futuro.
 enum OauthProvider {
-    GOOGLE
-    MICROSOFT
+    google
+    azure
 }
 
 /// Modelo de usuario con información de autenticación y relación con hogares.
 model Usuario {
-    id             String        @id @default(uuid())
+    id             String        @id
     email          String        @unique
     nombre         String?
-    oauth_provider OauthProvider
-    oauth_id       String        @unique
-    created_at     DateTime      @default(now())
-    updated_at     DateTime      @updatedAt
+    oauthProvider OauthProvider
+    oauthId       String        @unique
+    createdAt     DateTime      @default(now())
+    updatedAt     DateTime      @updatedAt
     // Relación de usuario con otros modelos.
     hogares        Hogar[]
 

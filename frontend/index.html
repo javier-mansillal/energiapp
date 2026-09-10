@@ -1,10 +1,24 @@
 <!doctype html>
-<html lang="en">
+<html lang="es" class="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <title>Energiapp</title>
+    <script>
+      // Anti-flash: aplica el tema guardado antes de que React monte
+      (function () {
+        const key = 'energiapp-theme'
+        const stored = localStorage.getItem(key)
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (stored === 'light') {
+          document.documentElement.classList.remove('dark')
+        } else if (stored === 'dark' || prefersDark) {
+          document.documentElement.classList.add('dark')
+        }
+        // si no hay stored y no hay prefers-dark → dark (default)
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
