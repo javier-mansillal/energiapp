@@ -77,6 +77,10 @@ Table predicciones {
   algoritmoUsado String [not null]
   fechaCalculo DateTime [default: `now()`, not null]
   hogar hogares [not null]
+
+  indexes {
+    (hogarId, periodoProyectadoInicio) [unique]
+  }
 }
 
 Table catalogo_recomendaciones {

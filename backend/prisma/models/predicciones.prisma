@@ -22,5 +22,8 @@ model Prediccion {
     // Relación de predicción con el hogar al que pertenece.
     hogar Hogar @relation(fields: [hogarId], references: [id], onDelete: Cascade)
 
+    // Una sola predicción por hogar y período proyectado: permite reemplazar el
+    // cálculo vigente sin dejar filas huérfanas.
+    @@unique([hogarId, periodoProyectadoInicio])
     @@map("predicciones")
 }

@@ -5,6 +5,7 @@ import hogaresRouter from "./routes/hogares";
 import onboardingRouter from "./routes/onboarding";
 import boletasRouter from "./routes/boletas";
 import usuarioRouter from "./routes/usuario";
+import prediccionRouter from "./routes/prediccion";
 
 const app = express();
 
@@ -35,5 +36,6 @@ app.use("/api/hogares", hogaresRouter);
 app.use("/api/onboarding", onboardingRouter);
 app.use("/api/boletas", boletasRouter);
 app.use("/api/usuario", usuarioRouter);
+app.use("/api/prediccion", prediccionRouter);
 
 export default app;
