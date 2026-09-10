@@ -7,7 +7,6 @@ import {
   Zap,
   Wallet,
   TrendingUp,
-  Refrigerator,
   BarChart3,
   RotateCcw,
 } from 'lucide-react'
@@ -46,9 +45,14 @@ import {
   obtenerPrediccion,
   type ResultadoPrediccion,
 } from '@/lib/prediccion'
+import {
+  listarElectrodomesticos,
+  type Electrodomestico,
+} from '@/lib/electrodomesticos'
 import KpiCard from '../components/dashboard/KpiCard'
 import ChartCard from '../components/dashboard/ChartCard'
 import ChartProyectado from '../components/dashboard/ChartProyectado'
+import ChartElectrodomesticos from '../components/dashboard/ChartElectrodomesticos'
 import DashboardSkeleton from '../components/dashboard/DashboardSkeleton'
 import { cn } from '@/lib/utils'
 
@@ -128,6 +132,7 @@ export default function Dashboard() {
   const [puntos, setPuntos] = useState<PuntoMensual[]>([])
   const [sinBoletas, setSinBoletas] = useState(!hogarIdInicial)
   const [prediccion, setPrediccion] = useState<ResultadoPrediccion | null>(null)
+  const [electrodomesticos, setElectrodomesticos] = useState<Electrodomestico[]>([])
   const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
@@ -140,14 +145,17 @@ export default function Dashboard() {
     let mounted = true
     Promise.all([
       listarBoletas(hogarId),
-      // La predicción es accesoria: si su cálculo falla, el dashboard igual carga.
+      // La predicción y los electrodomésticos son accesorios: si fallan, el
+      // dashboard igual carga.
       obtenerPrediccion(hogarId).catch(() => null),
+      listarElectrodomesticos(hogarId).catch(() => [] as Electrodomestico[]),
     ])
-      .then(([data, pred]) => {
+      .then(([data, pred, electros]) => {
         if (!mounted) return
         setPuntos(procesarBoletas(data))
         setSinBoletas(data.length === 0)
         setPrediccion(pred)
+        setElectrodomesticos(electros)
         setEstado('ok')
       })
       .catch(() => {
@@ -420,16 +428,10 @@ export default function Dashboard() {
               title="Electrodomésticos vs consumo"
               description="Participación estimada de cada electrodoméstico en tu consumo total"
             >
-              <div className="flex h-64 flex-col items-center justify-center gap-3">
-                <div className="p-4 rounded-full bg-amber-500/10">
-                  <Refrigerator className="size-8 text-amber-400" />
-                </div>
-                <p className="text-sm font-medium">Próximamente</p>
-                <p className="text-xs text-muted-foreground text-center">
-                  Cuando registres tus electrodomésticos, verás aquí su
-                  participación en el consumo total.
-                </p>
-              </div>
+              <ChartElectrodomesticos
+                electrodomesticos={electrodomesticos}
+                consumoTotalKwh={k.consumo}
+              />
             </ChartCard>
           </div>
         </>
