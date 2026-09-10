@@ -168,6 +168,7 @@ router.post(
       const resultado = parseBoleta(texto);
       res.json(resultado);
     } catch (err) {
+      console.error("[analizar] Error al analizar el PDF:", err);
       res.status(500).json({ error: "Error al analizar el PDF" });
     }
   }
