@@ -7,11 +7,25 @@ const router = Router();
 router.use(requireAuth);
 
 // GET /api/onboarding → indica si el usuario ya completó el onboarding
-// (es decir, si ya tiene al menos un hogar).
+// (es decir, si ya tiene al menos un hogar). Además devuelve el primer hogar
+// para que el frontend pueda auto-seleccionar el hogar activo cuando el
+// localStorage (que es por-origen) no tiene uno guardado.
 router.get("/", async (req: AuthedRequest, res) => {
   try {
-    const count = await prisma.hogar.count({ where: { usuarioId: req.userId! } });
-    res.json({ completed: count > 0, hogarCount: count });
+    const [count, hogar] = await Promise.all([
+      prisma.hogar.count({ where: { usuarioId: req.userId! } }),
+      prisma.hogar.findFirst({
+        where: { usuarioId: req.userId! },
+        select: { id: true },
+        // Mismo orden que GET /api/hogares: el primer hogar creado.
+        orderBy: { createdAt: "asc" },
+      }),
+    ]);
+    res.json({
+      completed: count > 0,
+      hogarCount: count,
+      hogarId: hogar?.id ?? null,
+    });
   } catch (err) {
     res.status(500).json({ error: "Error al consultar el onboarding" });
   }

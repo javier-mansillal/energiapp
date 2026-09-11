@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { api } from '@/lib/api'
+import { getActiveHogarId, setActiveHogarId } from '@/lib/activeHogar'
 
 type OnboardingStatus = 'loading' | 'completed' | 'pending' | 'error'
 
@@ -26,10 +27,20 @@ export function useOnboarding(user: User | null) {
     let mounted = true
     const startedAt = Date.now()
     api
-      .get<{ completed: boolean }>('/onboarding')
+      .get<{ completed: boolean; hogarId?: string | null }>('/onboarding')
       .then((d) => {
         afterMinDelay(MIN_LOADING_MS, startedAt, () => {
-          if (mounted) setStatus(d.completed ? 'completed' : 'pending')
+          if (mounted) {
+            setStatus(d.completed ? 'completed' : 'pending')
+            // El hogar activo se guarda en localStorage, que es por-origen: en
+            // un origen nuevo (ej. producción en Vercel) no existe aunque el
+            // usuario tenga hogares. Si no hay hogar activo, seleccionar el
+            // primero para que las páginas (dashboard, boletas, etc.) carguen
+            // datos desde el primer ingreso.
+            if (d.completed && d.hogarId && !getActiveHogarId()) {
+              setActiveHogarId(d.hogarId)
+            }
+          }
         })
       })
       // Si la API falla (backend caído, red, etc.) no podemos confirmar el

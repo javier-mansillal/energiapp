@@ -4,6 +4,7 @@ import { Zap, ArrowRight, ArrowLeft, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { api } from '@/lib/api'
+import { setActiveHogarId } from '@/lib/activeHogar'
 import { cn } from '@/lib/utils'
 
 const REGIONES = [
@@ -180,14 +181,20 @@ export default function Onboarding() {
     setSubmitting(true)
     setError(null)
     try {
-      await api.post('/onboarding', {
-        nombre: draft.nombre.trim(),
-        region: draft.region,
-        comuna: draft.comuna.trim(),
-        direccion: draft.direccion.trim(),
-        cantidadPersonas: Number(draft.cantidadPersonas),
-      })
+      const { hogar } = await api.post<{ completed: boolean; hogar: { id: string } }>(
+        '/onboarding',
+        {
+          nombre: draft.nombre.trim(),
+          region: draft.region,
+          comuna: draft.comuna.trim(),
+          direccion: draft.direccion.trim(),
+          cantidadPersonas: Number(draft.cantidadPersonas),
+        }
+      )
       localStorage.removeItem(DRAFT_KEY)
+      // Marcar el hogar recién creado como activo para que el dashboard cargue
+      // sus datos apenas termine el onboarding.
+      setActiveHogarId(hogar.id)
       setCompleted(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al guardar')
