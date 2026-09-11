@@ -96,7 +96,7 @@ export default function ChartProyectado({
   })
 
   return (
-    <ChartContainer config={config} className="h-64">
+    <ChartContainer config={config} className="h-64 w-full">
       <BarChart
         data={dataConRango}
         margin={{ top: 8, right: 8, bottom: 8, left: 8 }}

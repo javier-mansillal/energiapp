@@ -352,7 +352,7 @@ export default function Dashboard() {
               description="Cambio porcentual del consumo"
             >
               {hayDatos ? (
-                <ChartContainer config={chartConfig} className="h-64">
+                <ChartContainer config={chartConfig} className="h-64 w-full">
                   <BarChart
                     data={puntos}
                     margin={{ top: 8, right: 8, bottom: 8, left: 8 }}
@@ -393,7 +393,7 @@ export default function Dashboard() {
               description="Costo por kWh ($/kWh) de cada mes"
             >
               {hayDatos ? (
-                <ChartContainer config={chartConfig} className="h-64">
+                <ChartContainer config={chartConfig} className="h-64 w-full">
                   <LineChart
                     data={puntos}
                     margin={{ top: 8, right: 8, bottom: 8, left: 8 }}
