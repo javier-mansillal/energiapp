@@ -1,16 +1,5 @@
 import type { BoletaExtraida } from "../types";
-
-// Utilidades de parseo compartidas.
-const MONTO_RE = /(\d{1,3}(?:\.\d{3})*)\s*(?:CLP|\$|pesos)/i;
-const KWH_RE = /(\d{1,4}(?:[.,]\d{1,2})?)\s*kWh/i;
-const FECHA_RE = /(\d{1,2})\/(\d{1,2})\/(\d{4})/g;
-
-function parseFecha(texto: string): string | undefined {
-  const m = texto.match(FECHA_RE);
-  if (!m) return undefined;
-  const [, d, mo, y] = m;
-  return `${y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
-}
+import { aIso, aNumero, sumarCargos } from "../utilidades";
 
 // Parser genérico: busca patrones universales de boletas eléctricas.
 // Se usa como fallback cuando no se detecta una distribuidora conocida.
@@ -24,26 +13,27 @@ export function parseGenerico(texto: string): BoletaExtraida {
   else camposFaltantes.push("numeroCliente");
 
   // Consumo en kWh.
-  const kwh = texto.match(KWH_RE);
-  if (kwh) datos.consumoKwh = parseFloat(kwh[1].replace(".", "").replace(",", "."));
+  const kwh = texto.match(/(\d{1,4}(?:[.,]\d{1,2})?)\s*kWh/i);
+  if (kwh) datos.consumoKwh = aNumero(kwh[1]);
   else camposFaltantes.push("consumoKwh");
 
-  // Monto total.
-  const monto = texto.match(MONTO_RE);
-  if (monto) datos.montoTotal = parseInt(monto[1].replace(/\./g, ""), 10);
+  // Monto total: suma de los cargos del período actual (excluye mora,
+  // compensaciones y saldo anterior para no contaminar KPIs ni predicciones).
+  const total = sumarCargos(texto);
+  if (total > 0) datos.montoTotal = total;
   else camposFaltantes.push("montoTotal");
 
   // Fechas: buscar "Desde/Hasta" o "Período".
-  const desde = texto.match(/Desde\s*:?\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
-  const hasta = texto.match(/Hasta\s*:?\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
-  if (desde) datos.fechaInicioLectura = parseFecha(desde[1]);
+  const desde = texto.match(/Desde\s*:?\s*(\d{1,2}\s+[a-z]{3,9}\s+\d{4}|\d{1,2}\/\d{1,2}\/\d{4})/i);
+  const hasta = texto.match(/Hasta\s*:?\s*(\d{1,2}\s+[a-z]{3,9}\s+\d{4}|\d{1,2}\/\d{1,2}\/\d{4})/i);
+  if (desde) datos.fechaInicioLectura = aIso(desde[1]);
   else camposFaltantes.push("fechaInicioLectura");
-  if (hasta) datos.fechaFinLectura = parseFecha(hasta[1]);
+  if (hasta) datos.fechaFinLectura = aIso(hasta[1]);
   else camposFaltantes.push("fechaFinLectura");
 
   // Fecha de emisión.
-  const emision = texto.match(/Emisi[oó]n\s*:?\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
-  if (emision) datos.fechaEmision = parseFecha(emision[1]);
+  const emision = texto.match(/Emisi[oó]n\s*:?\s*(\d{1,2}\s+[a-z]{3,9}\s+\d{4}|\d{1,2}\/\d{1,2}\/\d{4})/i);
+  if (emision) datos.fechaEmision = aIso(emision[1]);
 
   // El genérico siempre es de confianza baja (no sabemos el layout).
   return datos;
