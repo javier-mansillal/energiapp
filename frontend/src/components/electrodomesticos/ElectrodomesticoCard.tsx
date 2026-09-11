@@ -88,11 +88,11 @@ export default function ElectrodomesticoCard({
   return (
     <Card className="bg-card/50 border-border/60">
       <CardHeader>
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <div className="p-1.5 rounded-lg bg-amber-500/10">
             <Refrigerator className="size-4 text-amber-400" />
           </div>
-          <CardTitle className="truncate text-sm">
+          <CardTitle className="min-w-0 text-sm">
             {electrodomestico.nombre}
           </CardTitle>
           <Badge
@@ -217,7 +217,7 @@ export default function ElectrodomesticoCard({
       </CardContent>
 
       {/* Acciones */}
-      <div className="flex items-center gap-2 border-t border-border/40 px-4 py-2.5">
+      <div className="flex flex-wrap items-center gap-2 border-t border-border/40 px-4 py-2.5">
         <Button
           size="sm"
           variant="ghost"

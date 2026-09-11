@@ -16,7 +16,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <div className="flex flex-1">
         <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         {/* En desktop el sidebar ocupa 64 (16rem) a la izquierda */}
-        <div className="flex flex-1 flex-col lg:ml-64 pt-16">
+        <div className="flex flex-1 flex-col lg:ml-64 pt-16 min-w-0">
           <main className="flex-1 px-6 py-8">{children}</main>
           <Footer />
         </div>

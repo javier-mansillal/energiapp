@@ -75,5 +75,12 @@ export async function createSignedUrl(
   }
 
   const data = await resp.json();
-  return data.signedURL;
+  const signed = data.signedURL as string;
+  // Supabase devuelve la URL firmada como ruta relativa a la API de storage
+  // ("/object/sign/..."), que vive bajo /storage/v1. Se antepone el host + el
+  // prefijo para que el front pueda abrirla directo en una pestaña. Si algún
+  // día viniera absoluta, se deja igual.
+  return signed.startsWith("http")
+    ? signed
+    : `${process.env.SUPABASE_URL}/storage/v1${signed}`;
 }

@@ -91,7 +91,7 @@ export default function Electrodomesticos() {
 
   return (
     <AppLayout>
-      <div className="mb-6 flex items-center gap-3">
+      <div className="mb-6 flex flex-wrap items-center gap-3">
         <div className="p-2 rounded-lg bg-amber-500/10">
           <Refrigerator className="size-5 text-amber-400" />
         </div>
@@ -137,7 +137,7 @@ export default function Electrodomesticos() {
           {/* Resumen */}
           {electrodomesticos.length > 0 && (
             <Card className="mb-6 bg-card/50 border-border/60">
-              <CardContent className="flex items-center gap-4">
+              <CardContent className="flex flex-wrap items-center gap-4">
                 <div className="p-2 rounded-lg bg-amber-500/10">
                   <Gauge className="size-5 text-amber-400" />
                 </div>

@@ -308,11 +308,11 @@ export default function Hogares() {
               )}
             >
               <CardHeader>
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                   <div className="p-2 rounded-lg bg-amber-500/10">
                     <Home className="size-4 text-amber-400" />
                   </div>
-                  <CardTitle className="text-lg">{h.nombre}</CardTitle>
+                  <CardTitle className="min-w-0 text-lg">{h.nombre}</CardTitle>
                   {isActive && (
                     <Badge variant="secondary" className="ml-auto text-xs">
                       Activo
@@ -409,7 +409,7 @@ export default function Hogares() {
               </CardContent>
 
               {/* Acciones */}
-              <div className="flex items-center gap-2 px-4 py-2.5 border-t border-border/40">
+              <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 border-t border-border/40">
                 <Button
                   size="sm"
                   variant={isActive ? 'secondary' : 'outline'}
