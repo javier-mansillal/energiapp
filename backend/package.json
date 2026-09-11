@@ -2,13 +2,16 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js",
-    "seed": "prisma db seed"
+    "build": "prisma generate && tsc",
+    "start": "node dist/src/server.js",
+    "seed": "prisma db seed",
+    "seed:prod": "node dist/prisma/seed.js"
   },
   "keywords": [],
   "author": "",
@@ -21,7 +24,8 @@
     "jose": "^6.2.12",
     "multer": "^2.3.0",
     "pdfjs-dist": "^6.3.289",
-    "pg": "^8.23.0"
+    "pg": "^8.23.0",
+    "dotenv": "^17.4.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
@@ -29,7 +33,6 @@
     "@types/multer": "^2.2.0",
     "@types/node": "^26.2.0",
     "@types/pg": "^8.23.1",
-    "dotenv": "^17.4.2",
     "prisma": "^7.9.1",
     "prisma-dbml-generator": "^0.12.0",
     "tsx": "^4.23.12",
