@@ -6,6 +6,7 @@ import Onboarding from './pages/Onboarding'
 import Dashboard from './pages/Dashboard'
 import Boletas from './pages/Boletas'
 import Electrodomesticos from './pages/Electrodomesticos'
+import Recomendaciones from './pages/Recomendaciones'
 import Hogares from './pages/Hogares'
 import Configuracion from './pages/Configuracion'
 import AuthCallback from './pages/AuthCallback'
@@ -26,6 +27,7 @@ export default function AppRoutes() {
       <Route path="/dashboard" element={<AppGuard><Dashboard /></AppGuard>} />
       <Route path="/boletas" element={<AppGuard><Boletas /></AppGuard>} />
       <Route path="/electrodomesticos" element={<AppGuard><Electrodomesticos /></AppGuard>} />
+      <Route path="/recomendaciones" element={<AppGuard><Recomendaciones /></AppGuard>} />
       <Route path="/hogares" element={<AppGuard><Hogares /></AppGuard>} />
       <Route path="/configuracion" element={<AppGuard><Configuracion /></AppGuard>} />
     </Routes>

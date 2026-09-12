@@ -4,6 +4,7 @@ import {
   Receipt,
   Refrigerator,
   Home,
+  Lightbulb,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -11,6 +12,7 @@ const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/boletas', label: 'Boletas', icon: Receipt },
   { to: '/electrodomesticos', label: 'Electrodomésticos', icon: Refrigerator },
+  { to: '/recomendaciones', label: 'Recomendaciones', icon: Lightbulb },
   { to: '/hogares', label: 'Hogares', icon: Home },
 ]
 
