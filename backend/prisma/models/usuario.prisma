@@ -13,6 +13,10 @@ model Usuario {
     nombre         String?
     oauthProvider OauthProvider
     oauthId       String        @unique
+    // Consentimiento para usar los datos del hogar en comparaciones anónimas
+    // con otros usuarios de la app (por región). Si está en false, la regla
+    // "region-alta" del módulo de recomendaciones no se dispara.
+    permiteComparaciones Boolean   @default(true)
     createdAt     DateTime      @default(now())
     updatedAt     DateTime      @updatedAt
     // Relación de usuario con otros modelos.

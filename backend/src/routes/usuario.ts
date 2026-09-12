@@ -40,24 +40,35 @@ router.get("/", async (req: AuthedRequest, res) => {
   }
 });
 
-// PATCH /api/usuario → actualiza el nombre del usuario autenticado.
+// PATCH /api/usuario → actualiza el perfil del usuario autenticado.
 // Solo puede modificar su propio perfil: el id sale del token verificado.
 router.patch("/", async (req: AuthedRequest, res) => {
-  const { nombre } = req.body ?? {};
-  const nombreTrim = typeof nombre === "string" ? nombre.trim() : "";
-  if (!nombreTrim) {
-    return res.status(400).json({ error: "El nombre no puede estar vacío" });
+  const body = req.body ?? {};
+  const data: Record<string, unknown> = {};
+
+  const { nombre } = body;
+  if (nombre !== undefined) {
+    const nombreTrim = typeof nombre === "string" ? nombre.trim() : "";
+    if (!nombreTrim) {
+      return res.status(400).json({ error: "El nombre no puede estar vacío" });
+    }
+    if (nombreTrim.length > 80) {
+      return res
+        .status(400)
+        .json({ error: "El nombre es demasiado largo (máx. 80 caracteres)" });
+    }
+    data.nombre = nombreTrim;
   }
-  if (nombreTrim.length > 80) {
-    return res
-      .status(400)
-      .json({ error: "El nombre es demasiado largo (máx. 80 caracteres)" });
+
+  // Consentimiento para comparaciones anónimas con otros usuarios de la app.
+  if (body.permiteComparaciones !== undefined) {
+    data.permiteComparaciones = Boolean(body.permiteComparaciones);
   }
 
   try {
     const usuario = await prisma.usuario.update({
       where: { id: req.userId! },
-      data: { nombre: nombreTrim },
+      data,
     });
     res.json(usuario);
   } catch (err) {

@@ -7,6 +7,7 @@ import boletasRouter from "./routes/boletas";
 import usuarioRouter from "./routes/usuario";
 import prediccionRouter from "./routes/prediccion";
 import electrodomesticosRouter from "./routes/electrodomesticos";
+import recomendacionesRouter from "./routes/recomendaciones";
 
 const app = express();
 
@@ -39,5 +40,6 @@ app.use("/api/boletas", boletasRouter);
 app.use("/api/usuario", usuarioRouter);
 app.use("/api/prediccion", prediccionRouter);
 app.use("/api/electrodomesticos", electrodomesticosRouter);
+app.use("/api/recomendaciones", recomendacionesRouter);
 
 export default app;
