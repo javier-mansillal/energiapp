@@ -21,12 +21,14 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { api } from '@/lib/api'
+import { cn } from '@/lib/utils'
 
 type UsuarioPerfil = {
   id: string
   email: string
   nombre: string | null
   oauthProvider: 'google' | 'azure'
+  permiteComparaciones: boolean
   createdAt: string
 }
 
@@ -86,6 +88,10 @@ export default function Configuracion() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
+  // Consentimiento para comparaciones anónimas
+  const [permiteComparaciones, setPermiteComparaciones] = useState(true)
+  const [savingPref, setSavingPref] = useState(false)
+
   useEffect(() => {
     let mounted = true
     api
@@ -94,6 +100,7 @@ export default function Configuracion() {
         if (!mounted) return
         setPerfil(data)
         setNombre(data.nombre ?? '')
+        setPermiteComparaciones(data.permiteComparaciones)
       })
       .catch((err) => {
         if (mounted) {
@@ -124,6 +131,26 @@ export default function Configuracion() {
       setError(err instanceof Error ? err.message : 'Error al guardar el nombre')
     } finally {
       setSaving(false)
+    }
+  }
+
+  // Cambia el consentimiento de comparaciones (optimista: revierte si falla).
+  async function toggleComparaciones() {
+    if (savingPref) return
+    const siguiente = !permiteComparaciones
+    setPermiteComparaciones(siguiente)
+    setSavingPref(true)
+    setError(null)
+    try {
+      const updated = await api.patch<UsuarioPerfil>('/usuario', {
+        permiteComparaciones: siguiente,
+      })
+      setPerfil(updated)
+    } catch (err) {
+      setPermiteComparaciones(!siguiente)
+      setError(err instanceof Error ? err.message : 'Error al guardar la preferencia')
+    } finally {
+      setSavingPref(false)
     }
   }
 
@@ -284,17 +311,27 @@ export default function Configuracion() {
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <Badge variant="outline" className="text-xs">
-                Próximamente
-              </Badge>
-              {/* Toggle placeholder: activado por defecto, aún sin persistencia */}
+              {savingPref && (
+                <Loader2 className="size-4 animate-spin text-amber-400" />
+              )}
               <button
                 type="button"
-                disabled
-                aria-label="Próximamente"
-                className="relative inline-flex h-6 w-11 items-center rounded-full bg-amber-500 opacity-60 cursor-not-allowed"
+                role="switch"
+                aria-checked={permiteComparaciones}
+                aria-label="Usar mis datos para comparaciones"
+                onClick={() => void toggleComparaciones()}
+                disabled={savingPref}
+                className={cn(
+                  'relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer disabled:opacity-60',
+                  permiteComparaciones ? 'bg-amber-500' : 'bg-muted'
+                )}
               >
-                <span className="translate-x-6 size-4.5 rounded-full bg-background shadow-sm" />
+                <span
+                  className={cn(
+                    'size-4.5 rounded-full bg-background shadow-sm transition-transform',
+                    permiteComparaciones ? 'translate-x-6' : 'translate-x-1'
+                  )}
+                />
               </button>
             </div>
           </div>
