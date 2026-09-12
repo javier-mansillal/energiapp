@@ -168,6 +168,7 @@ export default function Dashboard() {
 
   const k = kpis(puntos)
   const hayDatos = puntos.length > 0
+  const ultimoMes = hayDatos ? puntos[puntos.length - 1].mesLargo : null
   const pred = prediccion?.estado === 'ok' ? prediccion.prediccion : null
   const faltan = prediccion?.estado === 'insuficiente' ? prediccion : null
   const datosGrafico = conProyeccion(puntos, pred)
@@ -280,13 +281,21 @@ export default function Dashboard() {
               icon={Zap}
               title="Consumo del mes"
               value={fmtKwh(k.consumo)}
-              sub={hayDatos ? 'Último mes con boleta' : 'Sin boletas este mes'}
+              sub={
+                ultimoMes
+                  ? `Último mes con boleta (${ultimoMes})`
+                  : 'Sin boletas este mes'
+              }
             />
             <KpiCard
               icon={Wallet}
               title="Costo del mes"
               value={fmtCLP(k.costo)}
-              sub={hayDatos ? 'Último mes con boleta' : 'Sin boletas este mes'}
+              sub={
+                ultimoMes
+                  ? `Último mes con boleta (${ultimoMes})`
+                  : 'Sin boletas este mes'
+              }
             />
             <KpiCard
               icon={TrendingUp}
