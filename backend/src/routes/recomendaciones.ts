@@ -107,31 +107,6 @@ router.get("/", async (req: AuthedRequest, res) => {
       }),
     ]);
 
-    const regional = await promedioRegional(hogar.region, req.userId!);
-
-    const ctx = armarContexto({
-      region: hogar.region,
-      cantidadPersonas: hogar.cantidadPersonas,
-      permiteComparaciones: usuario?.permiteComparaciones ?? false,
-      promedioRegionalKwh: regional.promedio,
-      boletas: boletas.map<BoletaCtx>((b) => ({
-        consumoKwh: Number(b.consumoKwh),
-        montoTotal: Number(b.montoTotal),
-        fechaInicioLectura: b.fechaInicioLectura,
-        fechaFinLectura: b.fechaFinLectura,
-      })),
-      electrodomesticos: electrodomesticos.map<ElectrodomesticoCtx>((e) => ({
-        nombre: e.nombrePersonalizado ?? e.catalogo?.nombre ?? "Electrodoméstico",
-        catalogoNombre: e.catalogo?.nombre ?? null,
-        potenciaW: Number(e.potenciaW),
-        consumoVampiroW: Number(e.consumoVampiroW),
-        horasUsoDiario: Number(e.horasUsoDiario),
-        cantidad: e.cantidad,
-      })),
-    });
-
-    const generadas = generarRecomendaciones(ctx, catalogo);
-
     // Frescura: si la última generación de PENDIENTE es posterior a la última
     // modificación de los datos, se sirve lo que hay sin recalcular.
     const maxActualizacion = [
@@ -147,6 +122,33 @@ router.get("/", async (req: AuthedRequest, res) => {
     });
 
     if (!vigente || vigente.fechaGeneracion < maxActualizacion) {
+      // Solo se calcula el promedio regional (la query más cara) cuando hay que
+      // regenerar; si los datos están frescos se evita por completo.
+      const regional = await promedioRegional(hogar.region, req.userId!);
+
+      const ctx = armarContexto({
+        region: hogar.region,
+        cantidadPersonas: hogar.cantidadPersonas,
+        permiteComparaciones: usuario?.permiteComparaciones ?? false,
+        promedioRegionalKwh: regional.promedio,
+        boletas: boletas.map<BoletaCtx>((b) => ({
+          consumoKwh: Number(b.consumoKwh),
+          montoTotal: Number(b.montoTotal),
+          fechaInicioLectura: b.fechaInicioLectura,
+          fechaFinLectura: b.fechaFinLectura,
+        })),
+        electrodomesticos: electrodomesticos.map<ElectrodomesticoCtx>((e) => ({
+          nombre: e.nombrePersonalizado ?? e.catalogo?.nombre ?? "Electrodoméstico",
+          catalogoNombre: e.catalogo?.nombre ?? null,
+          potenciaW: Number(e.potenciaW),
+          consumoVampiroW: Number(e.consumoVampiroW),
+          horasUsoDiario: Number(e.horasUsoDiario),
+          cantidad: e.cantidad,
+        })),
+      });
+
+      const generadas = generarRecomendaciones(ctx, catalogo);
+
       // Regenera: se reemplazan solo las PENDIENTE; el historial se conserva.
       await prisma.$transaction([
         prisma.recomendacionHogar.deleteMany({
