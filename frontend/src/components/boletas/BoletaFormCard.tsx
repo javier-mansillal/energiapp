@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import {
   Pencil,
   FileUp,
+  FileText,
   Loader2,
   Sparkles,
   Check,
@@ -26,6 +28,17 @@ import {
   type ResultadoAnalisis,
 } from '@/lib/boletas'
 
+// Envoltura de un campo con su etiqueta (mismo patrón que el formulario de
+// electrodomésticos): label arriba, control abajo.
+function Campo({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      {children}
+    </label>
+  )
+}
+
 // Card "Subir boleta": formulario manual o análisis de PDF.
 // Maneja su propio estado y avisa con onCreated cuando se guarda una boleta.
 export default function BoletaFormCard({
@@ -42,6 +55,8 @@ export default function BoletaFormCard({
   const [guardando, setGuardando] = useState(false)
   const [analisis, setAnalisis] = useState<ResultadoAnalisis | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Input de archivo oculto: el botón "Elegir PDF" lo abre.
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   async function analizar() {
     if (!pdfFile) return
@@ -132,18 +147,37 @@ export default function BoletaFormCard({
           </Button>
         </div>
 
-        {/* Modo PDF: selector de archivo + analizar */}
+        {/* Modo PDF: elegir archivo + analizar */}
         {modo === 'pdf' && (
-          <div className="mb-4 flex items-center gap-3">
+          <div className="mb-4 flex flex-wrap items-center gap-3">
             <input
+              ref={fileInputRef}
               type="file"
               accept="application/pdf"
+              className="hidden"
               onChange={(e) => {
-                setPdfFile(e.target.files?.[0] ?? null)
+                const f = e.target.files?.[0] ?? null
+                setPdfFile(f)
                 setAnalisis(null)
+                // Permite volver a elegir el mismo archivo.
+                e.target.value = ''
               }}
-              className="text-sm"
             />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              className="cursor-pointer gap-1.5"
+            >
+              <FileUp className="size-3.5" />
+              {pdfFile ? 'Cambiar PDF' : 'Elegir PDF'}
+            </Button>
+            {pdfFile && (
+              <span className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
+                <FileText className="size-3.5 shrink-0 text-amber-400" />
+                <span className="truncate">{pdfFile.name}</span>
+              </span>
+            )}
             <Button
               size="sm"
               onClick={analizar}
@@ -184,44 +218,58 @@ export default function BoletaFormCard({
 
         {/* Formulario */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <input
-            type="number"
-            step="0.01"
-            value={form.consumoKwh}
-            onChange={(e) => setForm({ ...form, consumoKwh: e.target.value })}
-            placeholder="Consumo (kWh)"
-            className={inputCls}
-          />
-          <input
-            type="number"
-            step="0.01"
-            value={form.montoTotal}
-            onChange={(e) => setForm({ ...form, montoTotal: e.target.value })}
-            placeholder="Monto total (CLP)"
-            className={inputCls}
-          />
-          <MonthPicker
-            value={form.mes}
-            onChange={(mes) => setForm({ ...form, mes })}
-            placeholder="Mes de la boleta"
-          />
-          <DatePicker
-            value={form.fechaEmision}
-            onChange={(iso) => setForm({ ...form, fechaEmision: iso })}
-            placeholder="Fecha de emisión (opcional)"
-          />
-          <input
-            value={form.empresaDistribuidora}
-            onChange={(e) => setForm({ ...form, empresaDistribuidora: e.target.value })}
-            placeholder="Empresa distribuidora (opcional)"
-            className={inputCls}
-          />
-          <input
-            value={form.numeroCliente}
-            onChange={(e) => setForm({ ...form, numeroCliente: e.target.value })}
-            placeholder="Número de cliente (opcional)"
-            className={inputCls}
-          />
+          <Campo label="Consumo (kWh)">
+            <input
+              type="number"
+              step="0.01"
+              value={form.consumoKwh}
+              onChange={(e) => setForm({ ...form, consumoKwh: e.target.value })}
+              placeholder="Ej: 245.5"
+              className={inputCls}
+            />
+          </Campo>
+          <Campo label="Monto total (CLP)">
+            <input
+              type="number"
+              step="0.01"
+              value={form.montoTotal}
+              onChange={(e) => setForm({ ...form, montoTotal: e.target.value })}
+              placeholder="Ej: 123500"
+              className={inputCls}
+            />
+          </Campo>
+          <Campo label="Mes de la boleta">
+            <MonthPicker
+              value={form.mes}
+              onChange={(mes) => setForm({ ...form, mes })}
+            />
+          </Campo>
+          <Campo label="Fecha de emisión (opcional)">
+            <DatePicker
+              value={form.fechaEmision}
+              onChange={(iso) => setForm({ ...form, fechaEmision: iso })}
+            />
+          </Campo>
+          <Campo label="Empresa distribuidora (opcional)">
+            <input
+              value={form.empresaDistribuidora}
+              onChange={(e) =>
+                setForm({ ...form, empresaDistribuidora: e.target.value })
+              }
+              placeholder="Ej: Chilquinta Energía"
+              className={inputCls}
+            />
+          </Campo>
+          <Campo label="Número de cliente (opcional)">
+            <input
+              value={form.numeroCliente}
+              onChange={(e) =>
+                setForm({ ...form, numeroCliente: e.target.value })
+              }
+              placeholder="Ej: 123456789"
+              className={inputCls}
+            />
+          </Campo>
         </div>
 
         <div className="mt-4 flex justify-end">
