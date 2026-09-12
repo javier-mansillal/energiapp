@@ -26,6 +26,7 @@ export type Electrodomestico = {
   cantidad: number
   esActivo: boolean
   fechaAlta: string
+  fechaBaja: string | null
 }
 
 // Formulario: los números van como string para poder editarlos cómodo.
@@ -82,9 +83,13 @@ export async function listarCatalogo(): Promise<CatalogoItem[]> {
 }
 
 export async function listarElectrodomesticos(
-  hogarId: string
+  hogarId: string,
+  incluirInactivos = false
 ): Promise<Electrodomestico[]> {
-  return api.get<Electrodomestico[]>(`/electrodomesticos?hogarId=${hogarId}`)
+  const extra = incluirInactivos ? '&incluirInactivos=true' : ''
+  return api.get<Electrodomestico[]>(
+    `/electrodomesticos?hogarId=${hogarId}${extra}`
+  )
 }
 
 export async function crearElectrodomestico(
@@ -117,4 +122,13 @@ export async function editarElectrodomestico(
 
 export async function eliminarElectrodomestico(id: string): Promise<void> {
   await api.del(`/electrodomesticos/${id}`)
+}
+
+// Reactiva un electrodoméstico dado de baja: esActivo = true y limpia fechaBaja.
+export async function reactivarElectrodomestico(
+  id: string
+): Promise<Electrodomestico> {
+  return api.patch<Electrodomestico>(`/electrodomesticos/${id}`, {
+    esActivo: true,
+  })
 }

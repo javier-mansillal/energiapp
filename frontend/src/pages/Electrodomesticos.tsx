@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Gauge, Loader2, Plus, Refrigerator, X } from 'lucide-react'
+import { Archive, Gauge, Loader2, Plus, Refrigerator, X } from 'lucide-react'
 import AppLayout from '../components/AppLayout'
 import {
   Card,
@@ -20,6 +20,7 @@ import {
   type CatalogoItem,
   type Electrodomestico,
 } from '@/lib/electrodomesticos'
+import { cn } from '@/lib/utils'
 
 function fmtKwh(n: number): string {
   return `${n.toLocaleString('es-CL', { maximumFractionDigits: 1 })} kWh`
@@ -34,11 +35,12 @@ export default function Electrodomesticos() {
   const [loading, setLoading] = useState(Boolean(hogarIdInicial))
   const [error, setError] = useState<string | null>(null)
   const [agregando, setAgregando] = useState(false)
+  const [verInactivos, setVerInactivos] = useState(false)
 
   async function refresh() {
     if (!hogarId) return
     try {
-      setElectrodomesticos(await listarElectrodomesticos(hogarId))
+      setElectrodomesticos(await listarElectrodomesticos(hogarId, verInactivos))
     } catch (err) {
       setError(
         err instanceof Error ? err.message : 'Error al cargar los electrodomésticos'
@@ -50,7 +52,7 @@ export default function Electrodomesticos() {
     if (!hogarId) return
     let mounted = true
     Promise.all([
-      listarElectrodomesticos(hogarId),
+      listarElectrodomesticos(hogarId, verInactivos),
       // El catálogo es accesorio: si falla, el formulario cae a modo manual.
       listarCatalogo().catch(() => [] as CatalogoItem[]),
     ])
@@ -72,12 +74,11 @@ export default function Electrodomesticos() {
     return () => {
       mounted = false
     }
-  }, [hogarId])
+  }, [hogarId, verInactivos])
 
-  const totalMensual = electrodomesticos.reduce(
-    (acc, e) => acc + consumoMensualKwh(e),
-    0
-  )
+  const activos = electrodomesticos.filter((e) => e.esActivo)
+  const inactivos = electrodomesticos.filter((e) => !e.esActivo)
+  const totalMensual = activos.reduce((acc, e) => acc + consumoMensualKwh(e), 0)
 
   if (loading) {
     return (
@@ -102,16 +103,31 @@ export default function Electrodomesticos() {
           </p>
         </div>
         {hogarId && (
-          <Button
-            onClick={() => {
-              setAgregando((v) => !v)
-              setError(null)
-            }}
-            className="ml-auto cursor-pointer gap-1.5 bg-amber-500 font-semibold text-amber-950 hover:bg-amber-400"
-          >
-            {agregando ? <X className="size-4" /> : <Plus className="size-4" />}
-            {agregando ? 'Cerrar' : 'Agregar'}
-          </Button>
+          <div className="ml-auto flex items-center gap-2">
+            <Button
+              size="sm"
+              variant={verInactivos ? 'default' : 'outline'}
+              onClick={() => setVerInactivos((v) => !v)}
+              className={cn(
+                'cursor-pointer gap-1.5',
+                verInactivos &&
+                  'bg-amber-500 hover:bg-amber-400 text-amber-950 font-semibold'
+              )}
+            >
+              <Archive className="size-4" />
+              Ver inactivos
+            </Button>
+            <Button
+              onClick={() => {
+                setAgregando((v) => !v)
+                setError(null)
+              }}
+              className="cursor-pointer gap-1.5 bg-amber-500 font-semibold text-amber-950 hover:bg-amber-400"
+            >
+              {agregando ? <X className="size-4" /> : <Plus className="size-4" />}
+              {agregando ? 'Cerrar' : 'Agregar'}
+            </Button>
+          </div>
         )}
       </div>
 
@@ -135,7 +151,7 @@ export default function Electrodomesticos() {
       {hogarId && (
         <>
           {/* Resumen */}
-          {electrodomesticos.length > 0 && (
+          {activos.length > 0 && (
             <Card className="mb-6 bg-card/50 border-border/60">
               <CardContent className="flex flex-wrap items-center gap-4">
                 <div className="p-2 rounded-lg bg-amber-500/10">
@@ -150,8 +166,8 @@ export default function Electrodomesticos() {
                   </p>
                 </div>
                 <Badge variant="outline" className="ml-auto">
-                  {electrodomesticos.length}{' '}
-                  {electrodomesticos.length === 1 ? 'aparato' : 'aparatos'}
+                  {activos.length}{' '}
+                  {activos.length === 1 ? 'aparato' : 'aparatos'}
                 </Badge>
               </CardContent>
             </Card>
@@ -178,16 +194,46 @@ export default function Electrodomesticos() {
               </CardHeader>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {electrodomesticos.map((e) => (
-                <ElectrodomesticoCard
-                  key={e.id}
-                  electrodomestico={e}
-                  catalogo={catalogo}
-                  onChanged={refresh}
-                />
-              ))}
-            </div>
+            <>
+              {activos.length === 0 ? (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  No tienes aparatos activos en este hogar.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {activos.map((e) => (
+                    <ElectrodomesticoCard
+                      key={e.id}
+                      electrodomestico={e}
+                      catalogo={catalogo}
+                      onChanged={refresh}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {verInactivos && (
+                <>
+                  <h2 className="mt-8 text-lg font-semibold">Inactivos</h2>
+                  {inactivos.length === 0 ? (
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      No hay aparatos dados de baja.
+                    </p>
+                  ) : (
+                    <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {inactivos.map((e) => (
+                        <ElectrodomesticoCard
+                          key={e.id}
+                          electrodomestico={e}
+                          catalogo={catalogo}
+                          onChanged={refresh}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </>
           )}
         </>
       )}

@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import {
+  CalendarDays,
+  CalendarOff,
   Check,
   Clock,
   Gauge,
@@ -7,6 +9,7 @@ import {
   Loader2,
   Pencil,
   Refrigerator,
+  RefreshCw,
   Tag,
   Trash2,
   Zap,
@@ -21,10 +24,12 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import ElectroFormFields from './ElectroFormFields'
 import { cn } from '@/lib/utils'
+import { fmtFecha } from '@/lib/boletas'
 import {
   consumoMensualKwh,
   editarElectrodomestico,
   eliminarElectrodomestico,
+  reactivarElectrodomestico,
   toElectroForm,
   type CatalogoItem,
   type ElectroForm,
@@ -53,6 +58,7 @@ export default function ElectrodomesticoCard({
   const [savingEdit, setSavingEdit] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [reactivando, setReactivando] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const consumo = consumoMensualKwh(electrodomestico)
@@ -85,6 +91,19 @@ export default function ElectrodomesticoCard({
     }
   }
 
+  async function reactivar() {
+    setReactivando(true)
+    setError(null)
+    try {
+      await reactivarElectrodomestico(electrodomestico.id)
+      onChanged()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al reactivar')
+    } finally {
+      setReactivando(false)
+    }
+  }
+
   return (
     <Card className="bg-card/50 border-border/60">
       <CardHeader>
@@ -95,6 +114,11 @@ export default function ElectrodomesticoCard({
           <CardTitle className="min-w-0 text-sm">
             {electrodomestico.nombre}
           </CardTitle>
+          {!electrodomestico.esActivo && (
+            <Badge variant="destructive" className="shrink-0 text-xs">
+              Inactivo
+            </Badge>
+          )}
           <Badge
             variant={electrodomestico.catalogoId ? 'secondary' : 'outline'}
             className="ml-auto shrink-0 text-xs"
@@ -135,6 +159,16 @@ export default function ElectrodomesticoCard({
             <span className="flex items-center gap-2">
               <Hash className="size-3.5" />
               {electrodomestico.cantidad} unidades
+            </span>
+          )}
+          <span className="flex items-center gap-2">
+            <CalendarDays className="size-3.5" />
+            Alta: {fmtFecha(electrodomestico.fechaAlta)}
+          </span>
+          {!electrodomestico.esActivo && electrodomestico.fechaBaja && (
+            <span className="flex items-center gap-2">
+              <CalendarOff className="size-3.5" />
+              Baja: {fmtFecha(electrodomestico.fechaBaja)}
             </span>
           )}
           <span className="flex items-center gap-2 font-medium text-amber-400">
@@ -218,27 +252,46 @@ export default function ElectrodomesticoCard({
 
       {/* Acciones */}
       <div className="flex flex-wrap items-center gap-2 border-t border-border/40 px-4 py-2.5">
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => {
-            setEditing(true)
-            setEditForm(toElectroForm(electrodomestico))
-          }}
-          className="cursor-pointer gap-1.5"
-        >
-          <Pencil className="size-3.5" />
-          Editar
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => setConfirmingDelete(true)}
-          className="cursor-pointer gap-1.5 text-destructive"
-        >
-          <Trash2 className="size-3.5" />
-          Eliminar
-        </Button>
+        {!electrodomestico.esActivo ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={reactivar}
+            disabled={reactivando}
+            className="cursor-pointer gap-1.5 text-emerald-500"
+          >
+            {reactivando ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="size-3.5" />
+            )}
+            Reactivar
+          </Button>
+        ) : (
+          <>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setEditing(true)
+                setEditForm(toElectroForm(electrodomestico))
+              }}
+              className="cursor-pointer gap-1.5"
+            >
+              <Pencil className="size-3.5" />
+              Editar
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setConfirmingDelete(true)}
+              className="cursor-pointer gap-1.5 text-destructive"
+            >
+              <Trash2 className="size-3.5" />
+              Eliminar
+            </Button>
+          </>
+        )}
       </div>
     </Card>
   )

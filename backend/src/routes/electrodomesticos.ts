@@ -25,6 +25,7 @@ interface ElectroCrudo {
   cantidad: number;
   esActivo: boolean;
   fechaAlta: Date;
+  fechaBaja: Date | null;
   catalogo: { id: string; nombre: string; categoria: string } | null;
 }
 
@@ -43,6 +44,7 @@ function aRespuesta(e: ElectroCrudo) {
     cantidad: e.cantidad,
     esActivo: e.esActivo,
     fechaAlta: e.fechaAlta,
+    fechaBaja: e.fechaBaja,
   };
 }
 
@@ -67,9 +69,14 @@ router.get("/catalogo", async (_req: AuthedRequest, res) => {
   }
 });
 
-// GET /api/electrodomesticos?hogarId= → electrodomésticos activos del hogar.
+// GET /api/electrodomesticos?hogarId= → electrodomésticos del hogar.
+// Por defecto solo los activos; con incluirInactivos=true también los de baja
+// (para la vista de historial / reactivación).
 router.get("/", async (req: AuthedRequest, res) => {
-  const { hogarId } = req.query as { hogarId?: string };
+  const { hogarId, incluirInactivos } = req.query as {
+    hogarId?: string;
+    incluirInactivos?: string;
+  };
   if (!hogarId) {
     return res.status(400).json({ error: "Falta el parámetro hogarId" });
   }
@@ -83,9 +90,12 @@ router.get("/", async (req: AuthedRequest, res) => {
     }
 
     const electrodomesticos = await prisma.electrodomesticoHogar.findMany({
-      where: { hogarId, esActivo: true },
+      where: incluirInactivos === "true"
+        ? { hogarId }
+        : { hogarId, esActivo: true },
       include: { catalogo: true },
-      orderBy: { fechaAlta: "asc" },
+      // Activos primero, y dentro de cada grupo por fecha de alta.
+      orderBy: [{ esActivo: "desc" }, { fechaAlta: "asc" }],
     });
 
     res.json(electrodomesticos.map(aRespuesta));
@@ -234,6 +244,13 @@ router.patch("/:id", async (req: AuthedRequest, res) => {
         return res.status(400).json({ error: "El nombre no puede estar vacío" });
       }
       data.nombrePersonalizado = nombre || null;
+    }
+
+    // Ciclo de vida: reactivar limpia la fecha de baja; dar de baja la registra.
+    if (body.esActivo !== undefined) {
+      const esActivo = body.esActivo === true || body.esActivo === "true";
+      data.esActivo = esActivo;
+      data.fechaBaja = esActivo ? null : new Date();
     }
 
     const actualizado = await prisma.electrodomesticoHogar.update({
