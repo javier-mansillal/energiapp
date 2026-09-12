@@ -10,13 +10,28 @@ export default function AuthCallback() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    // Si el intercambio del código falló del lado de Supabase (p.ej. "Error
+    // getting user email from external provider"), GoTrue redirige de vuelta
+    // aquí con los parámetros error / error_description en la URL.
+    const params = new URLSearchParams(window.location.search)
+    const oauthError = params.get('error_description') ?? params.get('error')
+
     supabase.auth
       .getSession()
       .then(({ data }) => {
-        navigate(data.session ? '/dashboard' : '/login', { replace: true })
+        if (data.session) {
+          navigate('/dashboard', { replace: true })
+        } else if (oauthError) {
+          navigate(`/login?error=${encodeURIComponent(oauthError)}`, { replace: true })
+        } else {
+          navigate('/login', { replace: true })
+        }
       })
       .catch(() => {
-        navigate('/login', { replace: true })
+        navigate(
+          `/login?error=${encodeURIComponent(oauthError ?? 'Error inesperado al iniciar sesión')}`,
+          { replace: true }
+        )
       })
   }, [navigate])
 

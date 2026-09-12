@@ -40,7 +40,10 @@ type Provider = 'google' | 'azure'
 
 export default function Login() {
   const [loading, setLoading] = useState<Provider | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(() => {
+    // Error devuelto por Supabase tras un OAuth fallido (ver AuthCallback).
+    return new URLSearchParams(window.location.search).get('error')
+  })
 
   async function signIn(provider: Provider) {
     setError(null)
@@ -54,6 +57,11 @@ export default function Login() {
             // Fuerza a Google a mostrar el selector de cuentas siempre,
             // en vez de entrar directo con la última cuenta usada.
             prompt: 'select_account',
+            // Microsoft no devuelve el email por defecto: hay que pedir el
+            // scope explícitamente. Google no acepta estos scopes extra.
+            ...(provider === 'azure'
+              ? { scopes: 'openid profile email offline_access' }
+              : {}),
           },
         },
       })
