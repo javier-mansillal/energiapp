@@ -19,7 +19,7 @@ export default function InstallAppButton() {
     () =>
       typeof navigator !== 'undefined' &&
       (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
-        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
+        (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1))
   )
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export default function InstallAppButton() {
         <div
           id="install-app-instructions"
           role="status"
-          className="absolute right-0 top-full z-[60] mt-2 w-64 rounded-lg border border-border bg-background p-3 text-sm text-foreground shadow-lg"
+          className="absolute right-0 top-full z-50 mt-2 w-64 rounded-lg border border-border bg-background p-3 text-sm text-foreground shadow-lg"
         >
           {isIos
             ? 'En Safari, toca Compartir y selecciona “Añadir a pantalla de inicio”.'
