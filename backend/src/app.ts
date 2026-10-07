@@ -30,7 +30,7 @@ app.get("/health", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.status(200).json({ message: "Bienvenido a la API de EnergiApp" });
+  res.status(200).json({ message: "Bienvenido a la API de Energiapp" });
 });
 
 // API de hogares, onboarding y boletas (requieren session token de Supabase).

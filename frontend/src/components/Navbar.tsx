@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { useTheme } from '@/hooks/useTheme'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
+import InstallAppButton from './InstallAppButton'
 
 export default function Navbar({
   onMenuToggle,
@@ -73,6 +74,8 @@ export default function Navbar({
               <Moon className="size-5 text-slate-600" />
             )}
           </Button>
+
+          <InstallAppButton />
 
           {/* CTA Login */}
           {showLoginButton && (
