@@ -1,4 +1,4 @@
-# Energiapp 🔌
+# Energiapp ⚡
 
 Plataforma web para que hogares en Chile registren y visualicen su consumo eléctrico, administren boletas y electrodomésticos, y consulten predicciones y recomendaciones de ahorro.
 
